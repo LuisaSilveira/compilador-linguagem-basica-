@@ -1,0 +1,167 @@
+/*
+GABRIEL ROSAS 2210689 3WB
+LUISA SILVEIRA 2210875 3WB
+*/
+
+Para esse trabalho acreditamos que todos os pontos estão corretos. Para fazer a função compilaLinB utilizamos duas funcoes auxiliares operacao(), para calcular a operacão, e desvia(), para o caso do if.
+
+Registradores Usados:
+v1 - %r12d
+v2 - %r13d
+v3 - %r14d
+v4 - %r15d
+p1 - %edi
+p2 - %esi
+
+- Operacao:
+  Nessa função usamos o registrador r10d para nos reduzir os casos de possiveis de mov, add, sub e imul. Movemos o primeiro varp da operação e depois fazemos a operação em si no proprio r10d, ao fim passamos esse valor para o varp correto. Importante ressaltar que caso o varp seja uma variavel é necessario salvar seu valor na pilha, para isso fizemos a função addVariavelLocal.
+
+- Desvio
+  Essa função é chamada sempre que o existe um if no codigo LinB, ela é responsavel por adicionar o codigo de comparação (cmp) e de pulo (jne), é importante dizer que inciialmente são deixadas 4bytes de lacunas no codigo para serem preenchido ao fim do programa com os offsets necessários.
+
+
+Testes feitos: 
+
+T1: (caso do ead) para p1 = 5
+  
+  v1 <= p1 + $1          // 1: i = x + 1
+  ret                   // 2: retorna i
+
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab              
+  v1 = p1 + $1
+  ret
+  RESP = 6	OK!!
+
+
+T2: para p1 = 1
+
+  v1 <= p1 * $-10
+  ret
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab
+v1 = p1 * $-10
+ret
+RESP = -10	OK!!
+
+T3: para p1 = -1
+
+v1 <= p1 * $-10
+ret
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab              
+v1 = p1 * $-10
+ret
+RESP = 10	OK!!
+
+
+t4: para p1 = 2 e p2 = 3
+
+  v1 <= p1 + p2          // 1: i = x + y
+  p1 <= p1 - p2          // 2: x = x - y
+  v1 <= v1 * p1          // 3: i = i * x
+  ret                   // 4: retorna i
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab              
+v1 = p1 + p2
+p1 = p1 - p2
+v1 = v1 * p1
+ret
+RESP = -5	OK!!
+
+
+T5: para p1 = 5 e p2 = 5
+
+  v3 <= p1 + p2
+  v2 <= v3 * v3
+  v1 <= v2 - $-1
+  ret
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab              
+v3 = p1 + p2
+v2 = v3 * v3
+v1 = v2 - $-1
+ret
+RESP = 101	OK!!
+
+T6: (caso do ead) para p1 = 10
+
+  v1 <= $0 + $1          // 1: f = 1
+  if p1 4               // 2: if (n != 0) desvia para linha 4
+  ret                   // 3: retorna f
+  v1 <= v1 * p1          // 4: f = f * n
+  p1 <= p1 - $1          // 5: n = n - 1
+  if p1 4               // 6: if (n != 0) desvia para linha 4
+  ret                   // 7: retorna f
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab              
+v1 = $0 + $1
+if p1 4
+ret
+v1 = v1 * p1
+p1 = p1 - $1
+if p1 4
+ret
+RESP = 3628800	OK!!
+
+
+T7: (caso do ead) para p1 = 15
+
+  v1 <= $0 + $0          // 1: sum = 0
+  v2 <= $1 + $0          // 2: i = 1
+  p1 <= p1 + $1          // 3: x = x + 1
+  v3 <= p1 - v2          // 4: aux = x - i  (será zero se x == i)
+  if v3 7               // 5: if (aux != 0) desvia para linha 7
+  ret                   // 6: retorna sum
+  v3 <= v2 * v2          // 7: aux = i * i
+  v1 <= v1 + v3          // 8: sum = sum + aux
+  v2 <= v2 + $1          // 9: i = i + 1
+  if v2 4               // 10: if (i != 0) desvia para linha 4 (sempre desviará)
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab  
+  v1 = $0 + $0
+  v2 = $1 + $0
+  p1 = p1 + $1
+  v3 = p1 - v2
+  if v3 7
+  ret
+  v3 = v2 * v2
+  v1 = v1 + v3
+  v2 = v2 + $1
+  if v2 4
+  RESP = 1240	OK!!
+
+
+T8: para p1 = 15 e p2 =1
+
+v1 <= $0 + $0
+v2 <= p2 + $0        
+p1 <= p1 + p2
+v3 <= p1 - v2
+if v3 7      
+ret          
+v3 <= v2 * v2
+v1 <= v1 + v3
+v2 <= v2 + p2
+if v2 4
+
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] gcc -Wall -Wa,--execstack -o trab main.c compilalinb.c compilalinb.h
+[taquari.grad.inf.puc-rio.br:~/Documents/inf1018/trabalho2] ./trab              
+v1 = $0 + $0
+v2 = p2 + $0
+p1 = p1 + p2
+v3 = p1 - v2
+if v3 7
+ret
+v3 = v2 * v2
+v1 = v1 + v3
+v2 = v2 + p2
+if v2 4
+RESP = 1240	OK!!
